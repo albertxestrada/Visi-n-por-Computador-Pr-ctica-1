@@ -11,6 +11,7 @@ from cv2.typing import MatLike
 WINDOW_NAME = "DOG WINDOW"
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
 
 PREVIOUS_FRAME_KEYS = (2424832, 65361, 63234)
 NEXT_FRAME_KEYS = (2555904, 65363, 63235)
@@ -50,6 +51,8 @@ def main():
         if frame_number in frame_box_map:
             draw_box(preview, *frame_box_map[frame_number])
 
+        draw_frame_number(preview, frame_number, total_frames)
+
         # show frame with updates
         cv2.imshow(WINDOW_NAME, preview)
 
@@ -75,7 +78,6 @@ def main():
     video.release()
 
 
-
 def draw_box(frame: np.ndarray, pt1: Point, pt2: Point) -> None:
     x1, y1 = pt1
     x2, y2 = pt2
@@ -89,6 +91,49 @@ def draw_box(frame: np.ndarray, pt1: Point, pt2: Point) -> None:
 
     for line in lines:
         cv2.line(frame, *line, GREEN)
+
+
+def draw_frame_number(frame: MatLike, frame_number: int, total_frames: int):
+    draw_text_panel(frame, (f"Frame: {frame_number} / {total_frames}",))
+
+
+def draw_text_panel(
+    frame: MatLike, lines: tuple[str, ...], align_right: bool = False
+) -> None:
+
+    LINE_GAP = 6
+    FONT_FACE = cv2.FONT_HERSHEY_SIMPLEX
+    FONT_SCALE = 0.4
+    THICKNESS = 1
+    MARGIN = 8
+    PADDING = 5
+
+    sizes = [cv2.getTextSize(line, FONT_FACE, FONT_SCALE, THICKNESS) for line in lines]
+
+    text_width = max(width for (width, _), _ in sizes)
+
+    (_, text_height), baseline = sizes[0]
+    line_height = text_height + baseline + LINE_GAP
+
+    panel_width = text_width + 2 * PADDING
+    panel_height = len(lines) * line_height - LINE_GAP + 2 * PADDING
+
+    x = frame.shape[1] - panel_width - MARGIN if align_right else MARGIN
+    y = MARGIN
+
+    cv2.rectangle(frame, (x, y), (x + panel_width, y + panel_height), BLACK, -1)
+
+    for i, line in enumerate(lines):
+        cv2.putText(
+            img=frame,
+            text=line,
+            org=(x + PADDING, y + PADDING + text_height + i * line_height),
+            fontFace=FONT_FACE,
+            fontScale=FONT_SCALE,
+            color=GREEN,
+            thickness=THICKNESS,
+            lineType=cv2.LINE_AA,
+        )
 
 
 def add_click_point(event: int, x: int, y: int, flags: int, param: list[Point]) -> None:
