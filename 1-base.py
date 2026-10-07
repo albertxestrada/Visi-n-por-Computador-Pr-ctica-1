@@ -4,6 +4,8 @@ generar y guardar un nuevo vídeo con las regiones seleccionadas
 dibujadas sobre los frames del vídeo original.
 """
 
+import os
+
 import cv2
 import numpy as np
 from cv2.typing import MatLike
@@ -16,67 +18,11 @@ BLACK = (0, 0, 0)
 PREVIOUS_FRAME_KEYS = (2424832, 65361, 63234)
 NEXT_FRAME_KEYS = (2555904, 65363, 63235)
 QUIT_KEYS = (ord("q"), ord("Q"))
+UNDO_KEYS = (ord("z"), ord("Z"))
+OUTPUT_PATH = "./outputs/dog-labeled.mp4"
 
 Point = tuple[int, int]
 Box = tuple[Point, Point]
-
-
-def main():
-    print(45 * "=")
-    print("1-base.py")
-    print(45 * "=")
-
-    video = cv2.VideoCapture("dog.mp4")
-    frame_number = 1
-
-    frame = read_frame(video, frame_number)
-    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-
-    click_points: list[Point] = []
-    frame_box_map: dict[int, Box] = {}
-
-    cv2.namedWindow(WINDOW_NAME)
-    cv2.setMouseCallback(
-        window_name=WINDOW_NAME, on_mouse=add_click_point, param=click_points
-    )
-
-    while True:
-        preview = frame.copy()
-
-        # draw click points
-        for point in click_points:
-            cv2.circle(preview, point, 4, RED, -1)
-
-        # draw current box assign to the frame
-        if frame_number in frame_box_map:
-            draw_box(preview, *frame_box_map[frame_number])
-
-        draw_frame_number(preview, frame_number, total_frames)
-        draw_menu(preview)
-
-        # show frame with updates
-        cv2.imshow(WINDOW_NAME, preview)
-
-        key = cv2.waitKeyEx(20)
-
-        if len(click_points) >= 2:
-            frame_box_map[frame_number] = (click_points[0], click_points[1])
-            click_points.clear()
-
-        if key in QUIT_KEYS:
-            break
-
-        if key in PREVIOUS_FRAME_KEYS or key in NEXT_FRAME_KEYS:
-            step = 1 if key in NEXT_FRAME_KEYS else -1
-            new_frame = read_frame(video, frame_number + step)
-
-            if new_frame is not None:
-                frame = new_frame
-                frame_number += step
-                click_points.clear()
-
-    cv2.destroyAllWindows()
-    video.release()
 
 
 def draw_box(frame: np.ndarray, pt1: Point, pt2: Point) -> None:
@@ -103,6 +49,7 @@ def draw_menu(frame: MatLike) -> None:
         "<- / ->: Frame anterior / siguiente",
         "Click izq: Etiquetar",
         "Q: Guardar y salir",
+        "Z: Deshacer",
     )
     draw_text_panel(frame, MENU_LINES, align_right=True)
 
@@ -158,6 +105,99 @@ def read_frame(video: cv2.VideoCapture, frame_number: int) -> MatLike:
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_number - 1)
     _success, frame = video.read()
     return frame if _success else None
+
+
+def save_labeled_video(video: cv2.VideoCapture, frame_box_map: dict[int, Box]) -> None:
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = video.get(cv2.CAP_PROP_FPS) or 30
+
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+
+    writer = cv2.VideoWriter(
+        OUTPUT_PATH, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
+    )
+
+    # Back to the start, then read in order: faster than jumping to each frame.
+    video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    frame_number = 1
+    success, frame = video.read()
+
+    while success:
+        for box in frame_box_map.get(frame_number, []):
+            draw_box(frame, *box)
+
+        writer.write(frame)
+
+        frame_number += 1
+        success, frame = video.read()
+
+    writer.release()
+
+    print(f"Saved {OUTPUT_PATH} ({len(frame_box_map)} frames labeled)")
+
+
+def main():
+    print(45 * "=")
+    print("1-base.py")
+    print(45 * "=")
+
+    video = cv2.VideoCapture("dog.mp4")
+    frame_number = 1
+
+    frame = read_frame(video, frame_number)
+    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    click_points: list[Point] = []
+    frame_box_map: dict[int, list[Box]] = {}
+
+    cv2.namedWindow(WINDOW_NAME)
+    cv2.setMouseCallback(
+        window_name=WINDOW_NAME, on_mouse=add_click_point, param=click_points
+    )
+
+    while True:
+        preview = frame.copy()
+
+        # draw click points
+        for point in click_points:
+            cv2.circle(preview, point, 4, RED, -1)
+
+        # draw current box assign to the frame
+        for box in frame_box_map.get(frame_number, []):
+            draw_box(preview, *box)
+
+        draw_frame_number(preview, frame_number, total_frames)
+        draw_menu(preview)
+
+        # show frame with updates
+        cv2.imshow(WINDOW_NAME, preview)
+
+        key = cv2.waitKeyEx(20)
+
+        if len(click_points) >= 2:
+            box = (click_points[0], click_points[1])
+            frame_box_map.setdefault(frame_number, []).append(box)
+            click_points.clear()
+
+        if key in UNDO_KEYS and frame_box_map.get(frame_number):
+            frame_box_map[frame_number].pop()
+
+        if key in QUIT_KEYS:
+            break
+
+        if key in PREVIOUS_FRAME_KEYS or key in NEXT_FRAME_KEYS:
+            step = 1 if key in NEXT_FRAME_KEYS else -1
+            new_frame = read_frame(video, frame_number + step)
+
+            if new_frame is not None:
+                frame = new_frame
+                frame_number += step
+                click_points.clear()
+
+    cv2.destroyAllWindows()
+    save_labeled_video(video, frame_box_map)
+    video.release()
 
 
 main()
