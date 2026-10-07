@@ -59,6 +59,22 @@ def main():
             frame_box_map[frame_number] = (click_points[0], click_points[1])
             click_points.clear()
 
+        if key in QUIT_KEYS:
+            break
+
+        if key in PREVIOUS_FRAME_KEYS or key in NEXT_FRAME_KEYS:
+            step = 1 if key in NEXT_FRAME_KEYS else -1
+            new_frame = read_frame(video, frame_number + step)
+
+            if new_frame is not None:
+                frame = new_frame
+                frame_number += step
+                click_points.clear()
+
+    cv2.destroyAllWindows()
+    video.release()
+
+
 
 def draw_box(frame: np.ndarray, pt1: Point, pt2: Point) -> None:
     x1, y1 = pt1
@@ -81,9 +97,12 @@ def add_click_point(event: int, x: int, y: int, flags: int, param: list[Point]) 
 
 
 def read_frame(video: cv2.VideoCapture, frame_number: int) -> MatLike:
+    if frame_number < 1:
+        return None
+
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_number - 1)
     _success, frame = video.read()
-    return frame
+    return frame if _success else None
 
 
 main()
