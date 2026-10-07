@@ -52,6 +52,7 @@ def main():
             draw_box(preview, *frame_box_map[frame_number])
 
         draw_frame_number(preview, frame_number, total_frames)
+        draw_menu(preview)
 
         # show frame with updates
         cv2.imshow(WINDOW_NAME, preview)
@@ -95,6 +96,15 @@ def draw_box(frame: np.ndarray, pt1: Point, pt2: Point) -> None:
 
 def draw_frame_number(frame: MatLike, frame_number: int, total_frames: int):
     draw_text_panel(frame, (f"Frame: {frame_number} / {total_frames}",))
+
+
+def draw_menu(frame: MatLike) -> None:
+    MENU_LINES = (
+        "<- / ->: Frame anterior / siguiente",
+        "Click izq: Etiquetar",
+        "Q: Guardar y salir",
+    )
+    draw_text_panel(frame, MENU_LINES, align_right=True)
 
 
 def draw_text_panel(
