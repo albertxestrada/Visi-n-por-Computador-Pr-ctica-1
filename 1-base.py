@@ -19,7 +19,8 @@ PREVIOUS_FRAME_KEYS = (2424832, 65361, 63234)
 NEXT_FRAME_KEYS = (2555904, 65363, 63235)
 QUIT_KEYS = (ord("q"), ord("Q"))
 UNDO_KEYS = (ord("z"), ord("Z"))
-OUTPUT_PATH = "./outputs/dog-labeled.mp4"
+PAUSE_KEYS = (ord(" "),)
+OUTPUT_PATH = "./outputs/1-base.mp4"
 
 Point = tuple[int, int]
 Box = tuple[Point, Point]
@@ -40,12 +41,16 @@ def draw_box(frame: np.ndarray, pt1: Point, pt2: Point) -> None:
         cv2.line(frame, *line, GREEN)
 
 
-def draw_frame_number(frame: MatLike, frame_number: int, total_frames: int):
-    draw_text_panel(frame, (f"Frame: {frame_number} / {total_frames}",))
+def draw_frame_number(
+    frame: MatLike, frame_number: int, total_frames: int, paused: bool
+):
+    status = "Pausado" if paused else "Reproduciendo"
+    draw_text_panel(frame, (f"Frame: {frame_number} / {total_frames}", status))
 
 
 def draw_menu(frame: MatLike) -> None:
     MENU_LINES = (
+        "Espacio: Pausar / reproducir",
         "<- / ->: Frame anterior / siguiente",
         "Click izq: Etiquetar",
         "Q: Guardar y salir",
@@ -145,6 +150,9 @@ def main():
     video = cv2.VideoCapture("dog.mp4")
     frame_number = 1
 
+    paused = True
+    frame_delay = int(1000 / (video.get(cv2.CAP_PROP_FPS) or 30))
+
     frame = read_frame(video, frame_number)
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
@@ -167,13 +175,37 @@ def main():
         for box in frame_box_map.get(frame_number, []):
             draw_box(preview, *box)
 
-        draw_frame_number(preview, frame_number, total_frames)
+        draw_frame_number(preview, frame_number, total_frames, paused)
         draw_menu(preview)
 
         # show frame with updates
         cv2.imshow(WINDOW_NAME, preview)
 
-        key = cv2.waitKeyEx(20)
+        key = cv2.waitKeyEx(frame_delay)
+
+        if key in PAUSE_KEYS:
+            paused = not paused
+
+        step = 0
+
+        if key in PREVIOUS_FRAME_KEYS or key in NEXT_FRAME_KEYS:
+            step = 1 if key in NEXT_FRAME_KEYS else -1
+            paused = True
+        elif not paused:
+            step = 1
+
+        if step != 0:
+            new_frame = read_frame(video, frame_number + step)
+
+            if new_frame is not None:
+                frame = new_frame
+                frame_number += step
+                click_points.clear()
+            else:
+                # At the first or last frame there is nowhere to go: stay put.
+                paused = True
+
+                step = 0
 
         if len(click_points) >= 2:
             box = (click_points[0], click_points[1])
@@ -185,15 +217,6 @@ def main():
 
         if key in QUIT_KEYS:
             break
-
-        if key in PREVIOUS_FRAME_KEYS or key in NEXT_FRAME_KEYS:
-            step = 1 if key in NEXT_FRAME_KEYS else -1
-            new_frame = read_frame(video, frame_number + step)
-
-            if new_frame is not None:
-                frame = new_frame
-                frame_number += step
-                click_points.clear()
 
     cv2.destroyAllWindows()
     save_labeled_video(video, frame_box_map)
