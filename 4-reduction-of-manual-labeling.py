@@ -18,11 +18,11 @@ WINDOW_NAME = "DOG WINDOW"
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
 YELLOW = (0, 255, 255)
-BLACK = (0, 0, 0)
 
 PREVIOUS_FRAME_KEYS = (2424832, 65361, 63234)
 NEXT_FRAME_KEYS = (2555904, 65363, 63235)
 QUIT_KEYS = (ord("q"), ord("Q"))
+DISCARD_KEYS = (27,)  # Esc
 UNDO_KEYS = (ord("z"), ord("Z"))
 PAUSE_KEYS = (ord(" "),)
 OUTPUT_PATH = "./outputs/4-reduction-of-manual-labeling.mp4"
@@ -57,56 +57,45 @@ def draw_frame_number(
     frame: MatLike, frame_number: int, total_frames: int, paused: bool
 ):
     status = "Pausado" if paused else "Reproduciendo"
-    draw_text_panel(frame, (f"Frame: {frame_number} / {total_frames}", status))
+
+    TEXTS = [f"Frame: {frame_number} / {total_frames}", status]
+
+    draw_text(frame, TEXTS, x=10)
 
 
 def draw_menu(frame: MatLike) -> None:
-    MENU_LINES = (
+
+    width = frame.shape[1]
+    RIGHT_MARGIN = 240
+
+    TEXTS = [
         "Espacio: Pausar / reproducir",
         "<- / ->: Frame anterior / siguiente",
         "Click izq: Etiquetar",
         "Q: Guardar y salir",
+        "Esc: Salir sin guardar",
         "Z: Deshacer",
-    )
-    draw_text_panel(frame, MENU_LINES, align_right=True)
+    ]
+    draw_text(frame, TEXTS, x=width - RIGHT_MARGIN)
 
 
-def draw_text_panel(
-    frame: MatLike, lines: tuple[str, ...], align_right: bool = False
-) -> None:
+def draw_text(frame: MatLike, texts: list[str], x: int) -> None:
 
-    LINE_GAP = 6
-    FONT_FACE = cv2.FONT_HERSHEY_SIMPLEX
-    FONT_SCALE = 0.4
-    THICKNESS = 1
-    MARGIN = 8
-    PADDING = 5
+    INITIAL_TOP_MARGIN = 20
+    LINE_HEIGHT = 18
 
-    sizes = [cv2.getTextSize(line, FONT_FACE, FONT_SCALE, THICKNESS) for line in lines]
+    for i, text in enumerate(texts):
+        org_x = x
+        org_y = INITIAL_TOP_MARGIN + i * LINE_HEIGHT
 
-    text_width = max(width for (width, _), _ in sizes)
-
-    (_, text_height), baseline = sizes[0]
-    line_height = text_height + baseline + LINE_GAP
-
-    panel_width = text_width + 2 * PADDING
-    panel_height = len(lines) * line_height - LINE_GAP + 2 * PADDING
-
-    x = frame.shape[1] - panel_width - MARGIN if align_right else MARGIN
-    y = MARGIN
-
-    cv2.rectangle(frame, (x, y), (x + panel_width, y + panel_height), BLACK, -1)
-
-    for i, line in enumerate(lines):
         cv2.putText(
             img=frame,
-            text=line,
-            org=(x + PADDING, y + PADDING + text_height + i * line_height),
-            fontFace=FONT_FACE,
-            fontScale=FONT_SCALE,
+            text=text,
+            org=(org_x, org_y),
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=0.4,
             color=GREEN,
-            thickness=THICKNESS,
-            lineType=cv2.LINE_AA,
+            thickness=1,
         )
 
 
@@ -160,7 +149,7 @@ def save_labeled_video(video: cv2.VideoCapture, frame_box_map: dict[int, Box]) -
 
 def main():
     print(45 * "=")
-    print("1-base.py")
+    print("4-reduction-of-manual-labeling.py")
     print(45 * "=")
 
     video = cv2.VideoCapture("dog.mp4")
@@ -237,11 +226,16 @@ def main():
         if key in UNDO_KEYS and frame_box_map.get(frame_number):
             frame_box_map[frame_number].pop()
 
-        if key in QUIT_KEYS:
+        if key in QUIT_KEYS or key in DISCARD_KEYS:
             break
 
     cv2.destroyAllWindows()
-    save_labeled_video(video, frame_box_map)
+
+    if key in QUIT_KEYS:
+        save_labeled_video(video, frame_box_map)
+    else:
+        print("Exited without saving")
+
     video.release()
 
 
