@@ -11,8 +11,6 @@ precisión en la delimitación de las regiones.
 import os
 
 import cv2
-import numpy as np
-from cv2.typing import MatLike
 
 WINDOW_NAME = "DOG WINDOW"
 RED = (0, 0, 255)
@@ -27,11 +25,8 @@ UNDO_KEYS = (ord("z"), ord("Z"))
 PAUSE_KEYS = (ord(" "),)
 OUTPUT_PATH = "./outputs/4-reduction-of-manual-labeling.mp4"
 
-Point = tuple[int, int]
-Box = tuple[Point, Point]
 
-
-def draw_box(frame: np.ndarray, pt1: Point, pt2: Point, color=GREEN) -> None:
+def draw_box(frame, pt1, pt2, color=GREEN):
     x1, y1 = pt1
     x2, y2 = pt2
 
@@ -46,16 +41,12 @@ def draw_box(frame: np.ndarray, pt1: Point, pt2: Point, color=GREEN) -> None:
         cv2.line(frame, *line, color)
 
 
-def get_inherited_boxes(
-    frame_box_map: dict[int, list[Box]], frame_number: int
-) -> list[Box]:
+def get_inherited_boxes(frame_box_map, frame_number):
     keyframes = [k for k, boxes in frame_box_map.items() if boxes and k < frame_number]
     return frame_box_map[max(keyframes)] if keyframes else []
 
 
-def draw_frame_number(
-    frame: MatLike, frame_number: int, total_frames: int, paused: bool
-):
+def draw_frame_number(frame, frame_number, total_frames, paused):
     status = "Pausado" if paused else "Reproduciendo"
 
     TEXTS = [f"Frame: {frame_number} / {total_frames}", status]
@@ -63,7 +54,7 @@ def draw_frame_number(
     draw_text(frame, TEXTS, x=10)
 
 
-def draw_menu(frame: MatLike) -> None:
+def draw_menu(frame):
 
     width = frame.shape[1]
     RIGHT_MARGIN = 240
@@ -79,7 +70,7 @@ def draw_menu(frame: MatLike) -> None:
     draw_text(frame, TEXTS, x=width - RIGHT_MARGIN)
 
 
-def draw_text(frame: MatLike, texts: list[str], x: int) -> None:
+def draw_text(frame, texts, x):
 
     INITIAL_TOP_MARGIN = 20
     LINE_HEIGHT = 18
@@ -99,12 +90,12 @@ def draw_text(frame: MatLike, texts: list[str], x: int) -> None:
         )
 
 
-def add_click_point(event: int, x: int, y: int, flags: int, param: list[Point]) -> None:
+def add_click_point(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         param.append((x, y))
 
 
-def read_frame(video: cv2.VideoCapture, frame_number: int) -> MatLike:
+def read_frame(video, frame_number):
     if frame_number < 1:
         return None
 
@@ -113,7 +104,7 @@ def read_frame(video: cv2.VideoCapture, frame_number: int) -> MatLike:
     return frame if _success else None
 
 
-def save_labeled_video(video: cv2.VideoCapture, frame_box_map: dict[int, Box]) -> None:
+def save_labeled_video(video, frame_box_map):
     width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = video.get(cv2.CAP_PROP_FPS) or 30
@@ -127,7 +118,7 @@ def save_labeled_video(video: cv2.VideoCapture, frame_box_map: dict[int, Box]) -
     video.set(cv2.CAP_PROP_POS_FRAMES, 0)
     frame_number = 1
     success, frame = video.read()
-    current_boxes: list[Box] = []
+    current_boxes = []
 
     while success:
 
@@ -161,8 +152,8 @@ def main():
     frame = read_frame(video, frame_number)
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    click_points: list[Point] = []
-    frame_box_map: dict[int, list[Box]] = {}
+    click_points = []
+    frame_box_map = {}
 
     cv2.namedWindow(WINDOW_NAME)
     cv2.setMouseCallback(
