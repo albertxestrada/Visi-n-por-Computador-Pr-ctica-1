@@ -12,7 +12,7 @@ vídeo con esas regiones dibujadas.
 | `2-region-extraction.py` | Extracción de regiones: un vídeo recortado por región | Pendiente |
 | `3-hiding-regions.py` | Ocultación de regiones con un color sólido | Pendiente |
 | `4-reduction-of-manual-labeling.py` | Reducción del etiquetado manual | Implementado |
-| `5-extra-features.py` | Funcionalidades extra | Pendiente |
+| `5-extra-features.py` | Funcionalidades extra | Implementado |
 
 `practica1.py` es el ejemplo de partida de la asignatura. Espera un vídeo
 `MyInputVid.avi` que no está en el repositorio.
@@ -95,6 +95,16 @@ de una región tienen que hacerse sobre el mismo frame.
   ventana, las regiones propias del frame se ven en verde y las heredadas en
   amarillo.
 
+### Funcionalidades extra (`5-extra-features.py`)
+
+Además de permitir regiones de forma libre (no solo rectángulos), por cada
+región etiquetada se guarda un vídeo independiente solo con su contenido
+(recortado a su bounding box, con el resto en negro). Un vídeo nuevo se genera
+cada vez que aparece un frame con regiones nuevas, hasta el siguiente frame
+etiquetado.
+
+![Demo de 5-extra-features.py](./documentation/5%20-%20extra%20features%20documented.gif)
+
 ## Salida
 
 Los vídeos se guardan en la carpeta `outputs/`, que se crea sola y está
@@ -104,6 +114,7 @@ excluida de git:
 | --- | --- |
 | `1-base.py` | `outputs/1-base.mp4` |
 | `4-reduction-of-manual-labeling.py` | `outputs/4-reduction-of-manual-labeling.mp4` |
+| `5-extra-features.py` | `outputs/5-extra-features.mp4` y, por cada región etiquetada, un vídeo en `outputs/regions-5-extra-features/` |
 
 Cada ejecución sobrescribe el fichero anterior.
 
