@@ -9,8 +9,8 @@ vídeo con esas regiones dibujadas.
 | Script | Apartado | Estado |
 | --- | --- | --- |
 | `1-base.py` | Funcionalidad básica: guardar el vídeo con las regiones dibujadas | Implementado |
-| `2-region-extraction.py` | Extracción de regiones: un vídeo recortado por región | Pendiente |
-| `3-hiding-regions.py` | Ocultación de regiones con un color sólido | Pendiente |
+| `2-region-extraction.py` | Extracción de regiones: un vídeo recortado por región | Implementado |
+| `3-hiding-regions.py` | Ocultación de regiones con un color sólido | Implementado |
 | `4-reduction-of-manual-labeling.py` | Reducción del etiquetado manual | Implementado |
 | `5-extra-features.py` | Funcionalidades extra | Implementado |
 
@@ -86,14 +86,16 @@ Se abre una ventana con el vídeo **en pausa** en el primer frame. Al pulsar
 Los clicks sueltos se descartan al cambiar de frame, por lo que los dos clicks
 de una región tienen que hacerse sobre el mismo frame.
 
-### Diferencia entre los dos scripts
+### Reducción del etiquetado manual (`4-reduction-of-manual-labeling.py`)
 
-- **`1-base.py`**: cada región solo se dibuja en el frame en el que se marcó.
-- **`4-reduction-of-manual-labeling.py`**: las regiones de un frame etiquetado
-  se reutilizan en los frames siguientes hasta el próximo frame etiquetado, así
-  que solo hay que volver a etiquetar cuando la región deja de encajar. En la
-  ventana, las regiones propias del frame se ven en verde y las heredadas en
-  amarillo.
+En `1-base.py` cada región solo se dibuja en el frame en el que se marcó. Aquí,
+en cambio, basta con etiquetar el frame en el que aparece o cambia una región:
+las regiones se reutilizan en los frames siguientes hasta el próximo frame
+etiquetado, así que solo hay que volver a etiquetar cuando la región deja de
+encajar. En la ventana, las regiones propias del frame se ven en verde y las
+heredadas en amarillo.
+
+![Demo de 4-reduction-of-manual-labeling.py](./documentation/4-reduction-of-manual-labeling.gif)
 
 ### Funcionalidades extra (`5-extra-features.py`)
 
