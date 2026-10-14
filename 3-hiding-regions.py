@@ -23,8 +23,9 @@ QUIT_KEYS = (ord("q"), ord("Q"))
 DISCARD_KEYS = (27,)  # Esc
 UNDO_KEYS = (ord("z"), ord("Z"))
 PAUSE_KEYS = (ord(" "),)
+HIDDEN_OUTPUT_PATH = "./outputs/3-hidden-regions.mp4"
 OUTPUT_PATH = "./outputs/4-reduction-of-manual-labeling.mp4"
-HIDDEN_OUTPUT_PATH = "./outputs/4-hidden-regions.mp4"
+
 
 
 def draw_box(frame, pt1, pt2, color=GREEN):
@@ -43,7 +44,7 @@ def draw_box(frame, pt1, pt2, color=GREEN):
 
 
 def hide_box(frame, pt1, pt2, color=HIDE_COLOR):
-    """Tapa el interior de la caja pintando píxeles a mano (sin cv2.rectangle)."""
+  #Tapa el interior de la caja pintando píxeles.
     height = len(frame)
     width = len(frame[0])
 
@@ -178,7 +179,7 @@ def save_hidden_video(video, frame_box_map):
 
     while success:
 
-        # Si este frame tiene cajas nuevas, pasan a ser las vigentes.
+        # Si este frame tiene cajas nuevas, pasan a ser las vigentes
         if frame_box_map.get(frame_number):
             current_boxes = frame_box_map[frame_number]
 
