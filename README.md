@@ -86,6 +86,17 @@ Se abre una ventana con el vídeo **en pausa** en el primer frame. Al pulsar
 Los clicks sueltos se descartan al cambiar de frame, por lo que los dos clicks
 de una región tienen que hacerse sobre el mismo frame.
 
+### Extracción de regiones (`2-region-extraction.py`)
+
+Genera un vídeo independiente por cada región seleccionada. Cada vídeo contiene únicamente
+el recorte del vídeo original correspondiente al rectángulo marcado por el
+usuario, con fondo negro en los frames donde esa región no fue etiquetada.
+
+Los vídeos de región se guardan como `outputs/2-region-1.mp4`,
+`outputs/2-region-2.mp4`, etc., uno por cada región marcada.
+
+<img width="1300" height="752" alt="2-region-extraction" src="https://github.com/user-attachments/assets/cf3bec6c-1e66-426b-9eef-644f2925dfdf" />
+
 ### Reducción del etiquetado manual (`4-reduction-of-manual-labeling.py`)
 
 En `1-base.py` cada región solo se dibuja en el frame en el que se marcó. Aquí,
