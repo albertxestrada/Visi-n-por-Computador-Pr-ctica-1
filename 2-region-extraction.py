@@ -1,14 +1,13 @@
 """
-Extracción de regiones (hasta 1,5 puntos adicionales):
-generar y guardar un vídeo independiente por cada región
-seleccionada, que contenga el recorte del vídeo original
-correspondiente al rectángulo que delimita dicha región.
+Extracción de regiones (hasta 1,5 puntos adicionales): generar y
+guardar un vídeo independiente por cada región seleccionada, que
+contenga el recorte del vídeo original correspondiente al rectángulo que
+delimita dicha región.
+
 """
-
 import os
-
-import cv2
 import numpy
+import cv2
 
 WINDOW_NAME = "DOG WINDOW"
 RED = (0, 0, 255)
@@ -20,9 +19,78 @@ QUIT_KEYS = (ord("q"), ord("Q"))
 DISCARD_KEYS = (27,)  # Esc
 UNDO_KEYS = (ord("z"), ord("Z"))
 PAUSE_KEYS = (ord(" "),)
-VIDEO_PATH = "dog.mp4"
 OUTPUT_PATH = "./outputs/1-base.mp4"
 REGIONS_PATH = "./outputs/2-region-{}.mp4"
+
+def save_regions_videos(frame_box_map):
+    # Calcular el tamaño de cada region 
+    sizes = {}
+
+    for boxes in frame_box_map.values():
+        for k, box in enumerate(boxes):
+            (x1,y1), (x2, y2) = box
+            w = abs(x2 - x1)
+            h = abs(y2 - y1)
+            old_w, old_h = sizes.get(k, (0, 0))
+            sizes[k] = (max(old_w, w), max(old_h, h))
+
+    if len(sizes) == 0:
+        print("Sin regiones para extraer")
+        return 
+
+    # Abrir el video original para etxraer recorte limpio
+    video = cv2.VideoCapture("dog.mp4")
+    fps = video.get(cv2.CAP_PROP_FPS) or 30
+
+    # Crear videowriter para cada region
+    writers = {}
+    for k in sizes:
+        w, h = sizes[k]
+        if w == 0 or h == 0:
+            continue
+        name = REGIONS_PATH.format(k + 1)
+        writers[k] = cv2.VideoWriter(
+            name, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h) 
+            )
+
+    # Recorrer frames y escribir recorte 
+    frame_number = 1
+    success, frame = video.read() 
+
+    while success:
+        for k, box in enumerate(frame_box_map.get(frame_number, [])):
+            if k not in writers:
+                continue
+            
+            (x1, y1), (x2, y2) = box
+            # Normlaizar que left < right  y top < bottom 
+            left, right = min(x1, x2), max(x1, x2)
+            top, bottom = min(y1, y2), max(y1, y2)
+
+            if right == left or top == bottom:
+                continue
+
+            # Extraer el recorte del frame original
+            crop = frame[top:bottom, left:right]
+
+            # Canvas negro del tamaño de la region 
+            w, h = sizes[k]
+            canvas = numpy.zeros((h, w, 3), dtype=numpy.uint8)
+            canvas[0:bottom - top, 0:right - left] = crop
+
+            writers[k].write(canvas)
+        
+        frame_number += 1
+        success, frame = video.read()
+
+        for k in writers:
+            writers[k].release()
+
+        video.release()
+
+        print(f"Guardado {len(writers)} región videos en ./outputs")
+
+
 
 
 def draw_box(frame, pt1, pt2):
@@ -128,73 +196,12 @@ def save_labeled_video(video, frame_box_map):
     print(f"Saved {OUTPUT_PATH} ({len(frame_box_map)} frames labeled)")
 
 
-def save_region_videos(frame_box_map):
-    # biggest box of each region, the video needs a fixed size
-    sizes = {}
-    for boxes in frame_box_map.values():
-        for k, box in enumerate(boxes):
-            (x1, y1), (x2, y2) = box
-            w = abs(x2 - x1)
-            h = abs(y2 - y1)
-            old_w, old_h = sizes.get(k, (0, 0))
-            sizes[k] = (max(old_w, w), max(old_h, h))
-
-    if len(sizes) == 0:
-        print("No regions to extract")
-        return
-
-    # open it again to crop frames without the boxes
-    video = cv2.VideoCapture(VIDEO_PATH)
-    fps = video.get(cv2.CAP_PROP_FPS) or 30
-
-    writers = {}
-    for k in sizes:
-        w, h = sizes[k]
-        if w == 0 or h == 0:
-            continue
-        name = REGIONS_PATH.format(k + 1)
-        writers[k] = cv2.VideoWriter(name, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
-
-    frame_number = 1
-    success, frame = video.read()
-
-    while success:
-        for k, box in enumerate(frame_box_map.get(frame_number, [])):
-            if k not in writers:
-                continue
-
-            (x1, y1), (x2, y2) = box
-            left, right = min(x1, x2), max(x1, x2)
-            top, bottom = min(y1, y2), max(y1, y2)
-
-            if right == left or bottom == top:
-                continue
-
-            crop = frame[top:bottom, left:right]
-
-            # black background so every frame has the same size
-            w, h = sizes[k]
-            canvas = numpy.zeros((h, w, 3), dtype=numpy.uint8)
-            canvas[0:bottom - top, 0:right - left] = crop
-
-            writers[k].write(canvas)
-
-        frame_number += 1
-        success, frame = video.read()
-
-    for k in writers:
-        writers[k].release()
-    video.release()
-
-    print(f"Saved {len(writers)} region videos in ./outputs")
-
-
 def main():
     print(45 * "=")
-    print("2-region-extraction.py")
+    print("1-base.py")
     print(45 * "=")
 
-    video = cv2.VideoCapture(VIDEO_PATH)
+    video = cv2.VideoCapture("dog.mp4")
     frame_number = 1
 
     paused = True
@@ -269,7 +276,7 @@ def main():
 
     if key in QUIT_KEYS:
         save_labeled_video(video, frame_box_map)
-        save_region_videos(frame_box_map)
+        save_regions_videos(frame_box_map)
     else:
         print("Exited without saving")
 
