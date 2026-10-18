@@ -111,13 +111,15 @@ def save_labeled_video(video, frame_box_map):
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
 
-    writer = cv2.VideoWriter(
+    video_writer = cv2.VideoWriter(
         OUTPUT_PATH, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
     )
 
     video.set(cv2.CAP_PROP_POS_FRAMES, 0)
     frame_number = 1
     success, frame = video.read()
+
+    #* keep the boxes on the screen until you find the next frame with new boxes 
     current_boxes = []
 
     while success:
@@ -128,12 +130,12 @@ def save_labeled_video(video, frame_box_map):
         for box in current_boxes:
             draw_box(frame, *box)
 
-        writer.write(frame)
+        video_writer.write(frame)
 
         frame_number += 1
         success, frame = video.read()
 
-    writer.release()
+    video_writer.release()
 
     print(f"Saved {OUTPUT_PATH} ({len(frame_box_map)} frames labeled)")
 
@@ -152,8 +154,17 @@ def main():
     frame = read_frame(video, frame_number)
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
+    #? click_points
+    #? ex: [point1  , point2  , point3  , point4  , ...]
+    #? ex: [(x1, y1), (x2, y2), (x3, y3), (x4, y4), ...]
     click_points = []
-    frame_box_map = {}
+
+    #? frame_box_map
+    #? key -> frame_number, value -> [box1                , box2            ]
+    #? key -> frame_number, value -> [(point1  , point2)  , (point3  , point4)]
+    #? key -> frame_number, value -> [((x1, y1), (x2, y2)), ((x3, y3), (x4, y4))]
+    #? ex: {1: [((352, 33), (477, 175)), ((340, 218), (383, 257))], 9: [((486, 213), (535, 245))]} 
+    frame_box_map = {} 
 
     cv2.namedWindow(WINDOW_NAME)
     cv2.setMouseCallback(
@@ -163,11 +174,11 @@ def main():
     while True:
         preview = frame.copy()
 
-        # draw click points
+        #* draw click points with red color
         for point in click_points:
             cv2.circle(preview, point, 4, RED, -1)
 
-        # draw boxes
+        #* draw boxes
         own_boxes = frame_box_map.get(frame_number)
 
         if own_boxes:
@@ -180,7 +191,7 @@ def main():
         draw_frame_number(preview, frame_number, total_frames, paused)
         draw_menu(preview)
 
-        # show frame with updates
+        #* show frame with updates
         cv2.imshow(WINDOW_NAME, preview)
 
         key = cv2.waitKeyEx(frame_delay)
@@ -204,16 +215,18 @@ def main():
                 frame_number += step
                 click_points.clear()
             else:
-                # At the first or last frame there is nowhere to go: stay put.
+                #* At the first or last frame there is nowhere to go: stay put.
                 paused = True
-
                 step = 0
 
+        #* assign boxes to the current frame when there are two click points
         if len(click_points) >= 2:
-            box = (click_points[0], click_points[1])
+            point1, point2 = click_points
+            box = (point1, point2)
             frame_box_map.setdefault(frame_number, []).append(box)
             click_points.clear()
 
+        #* removes the last box created from the current frame
         if key in UNDO_KEYS and frame_box_map.get(frame_number):
             frame_box_map[frame_number].pop()
 
