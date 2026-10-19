@@ -198,7 +198,7 @@ def save_hidden_video(video, frame_box_map):
 
 def main():
     print(45 * "=")
-    print("4-reduction-of-manual-labeling.py")
+    print("3-hiding-regions.py")
     print(45 * "=")
 
     video = cv2.VideoCapture("dog.mp4")
@@ -281,7 +281,7 @@ def main():
     cv2.destroyAllWindows()
 
     if key in QUIT_KEYS:
-        save_labeled_video(video, frame_box_map)
+        #save_labeled_video(video, frame_box_map)
         save_hidden_video(video, frame_box_map)
     else:
         print("Exited without saving")
