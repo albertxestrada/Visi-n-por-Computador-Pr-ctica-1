@@ -149,15 +149,31 @@ if frame_box_map.get(frame_number):        # al guardar
 Además de permitir regiones de forma libre (no solo rectángulos), por cada
 región etiquetada se guarda un vídeo independiente solo con su contenido
 (recortado a su bounding box, con el resto en negro). Un vídeo nuevo se genera
-cada vez que aparece un frame con regiones nuevas, hasta el siguiente frame
-etiquetado.
+cada vez que aparece un frame con regiones nuevas.
 
-- Regiones poligonales: un click por vértice; se cierra con click derecho o con un click junto al primer vértice.
+- Regiones poligonales: un click por vértice; se cierra con click derecho o con un click junto al primer vértice (no necesariamente click cercano).
 - `Z`: deshace el último vértice.
 - `Z` sin región en curso: reabre la última región para modificarla o eliminarla.
 - `C`: cancela la región en curso.
 - Genera un vídeo por región solo con los píxeles interiores al polígono; el resto queda en negro.
 - Incluye la herencia de regiones de 1.4.
+
+ Cosas a resaltar de la parte 5:
+ - Para las lograr hacer figuras irregulares trabajamos con arrays de puntos que las interpretamos como "Regiones". Cada array de puntos se puede inferir que cierra cuando se conecta el punto final con el inicial. `draw_region`
+ - Para cerrar la figura con un click cercano se utilizó la formula de las distancias
+   d = √((x2 - x1)² + (y2 - y1)²)
+   => d² = (x2 - x1)² + (y2 - y1)²
+   con esta formula somos capaces de inferir que la distancia es corta (nosotros definimos el criterio de la distancia corta con esta constante `CLOSE_DISTANCE_PX`) y como es corta es que el usuario quiere cerrar el punto: `is_close_to_first_point`
+
+- Para encontrar si un pixel/punto esta dentro de una region, se utiliza una técnica matemática llamada ray-casting que se basa en 
+   - Evaluar uno por uno los segmentos (rectas) de la figura para obtener las pendientes.
+   - Con las pendientes somos capaces de analizar el dicho punto (el que no sabemos si esta dentro o fuera)
+   - Obtenemos la interseccion en X que le corresponderia a cada punto segun la pendiente de cada una de los segmentos.
+   - Revisamos si ese punto x esta a la derecha del punto X que encontramos como intersección
+   - Evaluamos si esta a la derecha de cualquier cantidad par de segmentos es que el punto esta afuera. (el ray cast atravezó la figura)
+   - Si esta a la derecha de cualquier candidad impar de segmentos el punto esta adentro. (el ray cast quedo a medias de la figura) `is_point_inside_region`
+
+- Para obtener los videos individuales de las secciones, se obtiene el punto minimo "y" y la altura (usando la y maxima) de los arrays, del mismo modo en el eje x. De esta manera se tiene un video cuadrado resultate de la región marcada. Para destacar únicamente la región se evalua si el punto/pixel esta dentro de una region para mantenerlo, si no, se pinta de negro de esa manera da la impresión de que el video solo es la sección irregular. `is_point_inside_region`
 
 ![Demo de 5-extra-features](./documentation/5%20-%20extra%20features%20documented.gif)
 
@@ -188,10 +204,4 @@ Los vídeos se guardan en `outputs/`, que se crea automáticamente y está exclu
 | `4-reduction-of-manual-labeling.py` | `outputs/4-reduction-of-manual-labeling.mp4` |
 | `5-extra-features.py` | `outputs/5-extra-features.mp4` y un vídeo por región en `outputs/regions-5-extra-features/` |
 
-## Desarrollo
 
-Al añadir o actualizar una dependencia, regenerar `requirements.txt`:
-
-```bash
-pip freeze > requirements.txt
-```
