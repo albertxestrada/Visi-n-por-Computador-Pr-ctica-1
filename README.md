@@ -1,32 +1,43 @@
 # Visión por Computador — Práctica 1
 
-Herramienta de etiquetado de vídeo hecha con OpenCV. Permite recorrer un vídeo
-frame a frame, marcar regiones rectangulares con el ratón y guardar un nuevo
-vídeo con esas regiones dibujadas.
+**Manejo de archivos, cámaras e imágenes · MUCSI · Universidad de Deusto · 2026-27**
+
+Herramienta de etiquetado de vídeo desarrollada con OpenCV. Permite recorrer un vídeo frame a frame, marcar regiones con el ratón y generar nuevos vídeos a partir de esas regiones.
+
+**Autores**
+
+| Nombre | Correo | GitHub | Apartado |
+| --- | --- | --- | --- |
+| Jorge Vargas | j.vargas@opendeusto.es | [@JorgeAVargasC](https://github.com/JorgeAVargasC) | 4 — Reducción del etiquetado manual |
+| Alberto Estrada | alberto.estrada@opendeusto.es | [@albertxestrada](https://github.com/albertxestrada) | 2 — Extracción de regiones |
+| Katherine Lorenzo | katherine.lorenzo@opendeusto.es | [@klorenzoe](https://github.com/klorenzoe) | 5 — Funcionalidades extra |
+| Mauro Cornejo | maurorodrigo.cornejo@opendeusto.es | [@Maux112](https://github.com/Maux112) | 3 — Ocultación de regiones |
+
+La funcionalidad básica (apartado 1) se desarrolló entre todos los miembros del grupo.
+
+**Docente:** Iker Pastor (iker.pastor@deusto.es)
+
+**Repositorio:** [github.com/albertxestrada/Visi-n-por-Computador-Pr-ctica-1](https://github.com/albertxestrada/Visi-n-por-Computador-Pr-ctica-1)
 
 ## Estado de la práctica
 
-| Script | Apartado | Estado |
-| --- | --- | --- |
-| `1-base.py` | Funcionalidad básica: guardar el vídeo con las regiones dibujadas | Implementado |
-| `2-region-extraction.py` | Extracción de regiones: un vídeo recortado por región | Implementado |
-| `3-hiding-regions.py` | Ocultación de regiones con un color sólido | Implementado |
-| `4-reduction-of-manual-labeling.py` | Reducción del etiquetado manual | Implementado |
-| `5-extra-features.py` | Funcionalidades extra | Implementado |
+| Script | Apartado | Puntos | Responsable |
+| --- | --- | --- | --- |
+| `1-base.py` | Funcionalidad básica | 5 | Todo el grupo |
+| `2-region-extraction.py` | Extracción de regiones | hasta 1,5 | Alberto Estrada |
+| `3-hiding-regions.py` | Ocultación de regiones | hasta 1 | Mauro Cornejo |
+| `4-reduction-of-manual-labeling.py` | Reducción del etiquetado manual | hasta 1,5 | Jorge Vargas |
+| `5-extra-features.py` | Funcionalidades extra | hasta 1 | Katherine Lorenzo |
 
-`practica1.py` es el ejemplo de partida de la asignatura. Espera un vídeo
-`MyInputVid.avi` que no está en el repositorio.
-
-## Requisitos
-
-- Python 3 (probado con Python 3.14)
-- Dependencias de `requirements.txt`: `numpy` y `opencv-python`
+---
 
 ## Instalación
 
+**Requisitos:** Python 3 (probado con Python 3.14) y las dependencias de `requirements.txt` (`numpy`, `opencv-python`).
+
 1. Crear el entorno virtual:
 
-   ```
+   ```bash
    python -m venv .venv
    ```
 
@@ -34,59 +45,62 @@ vídeo con esas regiones dibujadas.
 
    Windows (PowerShell):
 
-   ```
+   ```powershell
    .venv\Scripts\Activate.ps1
    ```
 
    Linux / macOS:
 
-   ```
+   ```bash
    source .venv/bin/activate
    ```
 
 3. Instalar las dependencias:
 
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 
-## Cómo se ejecuta
+## Ejecución
 
-Los scripts abren `dog.mp4` con una ruta relativa, así que hay que lanzarlos
-desde la raíz del repositorio, con el entorno virtual activado:
+Desde la raíz del repositorio (los scripts abren `dog.mp4` con una ruta relativa) y con el entorno virtual activado, lanzar el script del apartado:
 
-```
+```bash
 python 1-base.py
-```
-
-```
+python 2-region-extraction.py
+python 3-hiding-regions.py
 python 4-reduction-of-manual-labeling.py
+python 5-extra-features.py
 ```
 
-Se abre una ventana con el vídeo **en pausa** en el primer frame. Al pulsar
-`Q` se cierra la ventana y se guarda el resultado.
+El vídeo se abre en pausa sobre el primer frame. `Q` guarda y sale; `Esc` sale sin guardar.
 
 ### Controles
 
-| Tecla | Acción |
-| --- | --- |
-| `Espacio` | Pausar / reproducir |
-| `←` / `→` | Frame anterior / siguiente (pausa el vídeo) |
-| Click izquierdo | Marcar una esquina de la región |
-| `Z` | Deshacer la última región del frame actual |
-| `Q` | Guardar y salir |
+| Tecla / ratón | Scripts 1–4 | Script 5 |
+| --- | --- | --- |
+| `Espacio` | Pausar / reproducir | Pausar / reproducir |
+| `←` / `→` | Frame anterior / siguiente | Frame anterior / siguiente |
+| Click izquierdo | Esquina del rectángulo (2 clicks) | Añadir vértice; cerca del primero, cierra |
+| Click derecho | — | Cerrar la región |
+| `Z` | Deshacer la última región del frame | Deshacer el último vértice / reabrir región |
+| `C` | — | Cancelar la región en curso |
+| `Q` | Guardar y salir | Guardar y salir |
+| `Esc` | Salir sin guardar | Salir sin guardar |
 
-### Etiquetar una región
+---
 
-1. Pausa el vídeo en el frame que quieras etiquetar.
-2. Haz click en una esquina de la región y después en la esquina opuesta.
-   Con el segundo click se crea el rectángulo.
-3. Repite para añadir más regiones al mismo frame.
+## Funcionalidades implementadas
 
-Los clicks sueltos se descartan al cambiar de frame, por lo que los dos clicks
-de una región tienen que hacerse sobre el mismo frame.
+### 1.1 Funcionalidad básica (`1-base.py`)
 
-### Extracción de regiones (`2-region-extraction.py`)
+- Reproducción con pausa y navegación frame a frame.
+- Regiones rectangulares definidas con dos clicks; varias por frame.
+- `Z` deshace la última región.
+- Muestra en pantalla el número de frame, el estado y los controles.
+- Genera un vídeo con las regiones dibujadas.
+
+### 1.2 Extracción de regiones (`2-region-extraction.py`)
 
 Genera un vídeo independiente por cada región seleccionada. Cada vídeo contiene únicamente
 el recorte del vídeo original correspondiente al rectángulo marcado por el
@@ -95,27 +109,42 @@ usuario, con fondo negro en los frames donde esa región no fue etiquetada.
 Los vídeos de región se guardan como `outputs/2-region-1.mp4`,
 `outputs/2-region-2.mp4`, etc., uno por cada región marcada.
 
-<img width="1300" height="752" alt="2-region-extraction" src="https://github.com/user-attachments/assets/cf3bec6c-1e66-426b-9eef-644f2925dfdf" />
+- Genera un vídeo por región con el recorte de su rectángulo.
+- Si la caja cambia de tamaño, el vídeo usa el tamaño máximo y rellena con negro.
 
-### Ocultar regiones (`3-hiding-regions`)
+![Demo de 2-region-extraction](https://github.com/user-attachments/assets/cf3bec6c-1e66-426b-9eef-644f2925dfdf)
+
+### 1.3 Ocultación de regiones (`3-hiding-regions.py`)
 
 Genera un vídeo en el que las regiones marcadas se ocultan mediante un color sólido negro por defecto.
 
+- Genera un vídeo completo con las regiones rellenas de un color sólido (negro por defecto, configurable).
+- El resultado no depende del orden de los clicks y nunca se sale de la imagen.
+- Las regiones siguen ocultas en los frames siguientes (ver 1.4).
 
 ![Demo de 3-hiding-regions](./documentation/3-hiding-regions.gif)
 
-### Reducción del etiquetado manual (`4-reduction-of-manual-labeling.py`)
+### 1.4 Reducción del etiquetado manual (`4-reduction-of-manual-labeling.py`)
 
-En `1-base.py` cada región solo se dibuja en el frame en el que se marcó. Aquí,
-en cambio, basta con etiquetar el frame en el que aparece o cambia una región:
-las regiones se reutilizan en los frames siguientes hasta el próximo frame
-etiquetado, así que solo hay que volver a etiquetar cuando la región deja de
-encajar. En la ventana, las regiones propias del frame se ven en verde y las
-heredadas en amarillo.
+- Solo se etiquetan los frames clave, donde una región aparece o cambia.
+- Las regiones se heredan en los frames siguientes hasta el próximo frame clave.
+- Para corregir una región, se vuelve a marcar en el frame donde el objeto se ha movido.
+- Verde: región marcada en ese frame. Amarillo: región heredada.
 
-![Demo de 4-reduction-of-manual-labeling.py](./documentation/4-reduction-of-manual-labeling.gif)
+*Clave de la solución:* un frame sin regiones propias toma las del frame clave anterior más cercano. Al guardar, las cajas vigentes solo se sustituyen cuando aparece un nuevo frame clave.
 
-### Funcionalidades extra (`5-extra-features.py`)
+```python
+def get_inherited_boxes(frame_box_map, frame_number):
+    keyframes = [k for k, boxes in frame_box_map.items() if boxes and k < frame_number]
+    return frame_box_map[max(keyframes)] if keyframes else []
+
+if frame_box_map.get(frame_number):        # al guardar
+    current_boxes = frame_box_map[frame_number]
+```
+
+![Demo de 4-reduction-of-manual-labeling](./documentation/4-reduction-of-manual-labeling.gif)
+
+### 1.5 Funcionalidades extra (`5-extra-features.py`)
 
 Además de permitir regiones de forma libre (no solo rectángulos), por cada
 región etiquetada se guarda un vídeo independiente solo con su contenido
@@ -123,26 +152,46 @@ región etiquetada se guarda un vídeo independiente solo con su contenido
 cada vez que aparece un frame con regiones nuevas, hasta el siguiente frame
 etiquetado.
 
-![Demo de 5-extra-features.py](./documentation/5%20-%20extra%20features%20documented.gif)
+- Regiones poligonales: un click por vértice; se cierra con click derecho o con un click junto al primer vértice.
+- `Z`: deshace el último vértice.
+- `Z` sin región en curso: reabre la última región para modificarla o eliminarla.
+- `C`: cancela la región en curso.
+- Genera un vídeo por región solo con los píxeles interiores al polígono; el resto queda en negro.
+- Incluye la herencia de regiones de 1.4.
+
+![Demo de 5-extra-features](./documentation/5%20-%20extra%20features%20documented.gif)
+
+---
+
+## Decisiones de desarrollo
+
+**Organización**
+
+- Un script por apartado, para ejecutarlos y evaluarlos por separado.
+- Todos los scripts tienen la misma estructura: visualización, lectura de frames y guardado.
+
+**Datos**
+
+- Las regiones se guardan en un diccionario `{frame: [regiones]}`.
+- Deshacer equivale a un `pop()` sobre la lista del frame.
+- La herencia de regiones busca el frame clave anterior más cercano.
 
 ## Salida
 
-Los vídeos se guardan en la carpeta `outputs/`, que se crea sola y está
-excluida de git:
+Los vídeos se guardan en `outputs/`, que se crea automáticamente y está excluida de git. Cada ejecución sobrescribe los ficheros anteriores.
 
 | Script | Fichero generado |
 | --- | --- |
 | `1-base.py` | `outputs/1-base.mp4` |
-| `3-hiding-regions.py` | `outputs/3-hiding-regions.mp4` |
+| `2-region-extraction.py` | `outputs/2-region-<k>.mp4` por región, más el vídeo etiquetado |
+| `3-hiding-regions.py` | `outputs/3-hidden-regions.mp4`, más el vídeo etiquetado |
 | `4-reduction-of-manual-labeling.py` | `outputs/4-reduction-of-manual-labeling.mp4` |
-| `5-extra-features.py` | `outputs/5-extra-features.mp4` y, por cada región etiquetada, un vídeo en `outputs/regions-5-extra-features/` |
-
-Cada ejecución sobrescribe el fichero anterior.
+| `5-extra-features.py` | `outputs/5-extra-features.mp4` y un vídeo por región en `outputs/regions-5-extra-features/` |
 
 ## Desarrollo
 
-Si añades o actualizas una dependencia, regenera `requirements.txt`:
+Al añadir o actualizar una dependencia, regenerar `requirements.txt`:
 
-```
+```bash
 pip freeze > requirements.txt
 ```
