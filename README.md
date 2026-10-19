@@ -97,6 +97,13 @@ Los vídeos de región se guardan como `outputs/2-region-1.mp4`,
 
 <img width="1300" height="752" alt="2-region-extraction" src="https://github.com/user-attachments/assets/cf3bec6c-1e66-426b-9eef-644f2925dfdf" />
 
+### Ocultar regiones (`3-hiding-regions`)
+
+Genera un vídeo en el que las regiones marcadas se ocultan mediante un color sólido negro por defecto.
+
+
+![Demo de 3-hiding-regions](./documentation/3-hiding-regions.gif)
+
 ### Reducción del etiquetado manual (`4-reduction-of-manual-labeling.py`)
 
 En `1-base.py` cada región solo se dibuja en el frame en el que se marcó. Aquí,
@@ -126,6 +133,7 @@ excluida de git:
 | Script | Fichero generado |
 | --- | --- |
 | `1-base.py` | `outputs/1-base.mp4` |
+| `3-hiding-regions.py` | `outputs/3-hiding-regions.mp4` |
 | `4-reduction-of-manual-labeling.py` | `outputs/4-reduction-of-manual-labeling.mp4` |
 | `5-extra-features.py` | `outputs/5-extra-features.mp4` y, por cada región etiquetada, un vídeo en `outputs/regions-5-extra-features/` |
 
