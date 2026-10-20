@@ -22,48 +22,48 @@ PAUSE_KEYS = (ord(" "),)
 OUTPUT_PATH = "./outputs/1-base.mp4"
 REGIONS_PATH = "./outputs/2-region-{}.mp4"
 
-def save_regions_videos(frame_box_map):
-    # Calcular el tamaño de cada region 
-    sizes = {}
+# Genera un video recortado por cada región marcada, la región se propaga hasta el final 
+def save_regions_videos(regions):
 
-    for boxes in frame_box_map.values():
-        for k, box in enumerate(boxes):
-            (x1,y1), (x2, y2) = box
-            w = abs(x2 - x1)
-            h = abs(y2 - y1)
-            old_w, old_h = sizes.get(k, (0, 0))
-            sizes[k] = (max(old_w, w), max(old_h, h))
-
-    if len(sizes) == 0:
+    if not regions:
         print("Sin regiones para extraer")
-        return 
+        return  
 
-    # Abrir el video original para etxraer recorte limpio
+    # Calcular el tamaño de cada region (ancho y alto)
+    sizes = {}
+    
+    for rid, (fn, box) in regions.items():
+        (x1,y1), (x2, y2) = box
+        sizes[rid] = (abs(x2 - x1), abs(y2 - y1))
+    
+
+    # Abrir el video original para etxraer recorte limpio para leer frame por frame
     video = cv2.VideoCapture("dog.mp4")
     fps = video.get(cv2.CAP_PROP_FPS) or 30
 
-    # Crear videowriter para cada region
+    # Crear videowriter independiente para cada región, cada videowriter guarda solo el recorte de su región 
     writers = {}
-    for k in sizes:
-        w, h = sizes[k]
-        if w == 0 or h == 0:
-            continue
-        name = REGIONS_PATH.format(k + 1)
-        writers[k] = cv2.VideoWriter(
-            name, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h) 
-            )
 
-    # Recorrer frames y escribir recorte 
+    for rid, (w, h) in sizes.items():
+        if w == 0 or h == 0:
+            continue 
+        writers[rid] = cv2.VideoWriter(REGIONS_PATH.format(rid + 1), cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h) )
+
+
     frame_number = 1
     success, frame = video.read() 
 
     while success:
-        for k, box in enumerate(frame_box_map.get(frame_number, [])):
-            if k not in writers:
+        for rid, (start_frame, box) in sorted(regions.items()):
+            # Saltar frames anteriores al que se marcó la región
+            if start_frame > frame_number:
+                continue
+
+            if rid not in writers:
                 continue
             
             (x1, y1), (x2, y2) = box
-            # Normlaizar que left < right  y top < bottom 
+            # Normlaizar corrdenadas es decir que left < right  y top < bottom 
             left, right = min(x1, x2), max(x1, x2)
             top, bottom = min(y1, y2), max(y1, y2)
 
@@ -73,22 +73,28 @@ def save_regions_videos(frame_box_map):
             # Extraer el recorte del frame original
             crop = frame[top:bottom, left:right]
 
-            # Canvas negro del tamaño de la region 
-            w, h = sizes[k]
-            canvas = numpy.zeros((h, w, 3), dtype=numpy.uint8)
-            canvas[0:bottom - top, 0:right - left] = crop
-
-            writers[k].write(canvas)
+            # Cerrar todos los writers al temrinar(fuera del while)
+            writers[rid].write(crop)
         
         frame_number += 1
         success, frame = video.read()
 
-        for k in writers:
-            writers[k].release()
+    for rid in writers:
+        writers[rid].release()
 
-        video.release()
+    video.release()
 
-        print(f"Guardado {len(writers)} región videos en ./outputs")
+    print(f"Guardado {len(writers)} región videos en ./outputs")
+
+def get_active_boxes(regions, frame_number):
+
+    active_boxes = []
+
+    for rid, (start_frame, box) in sorted(regions.items()):
+        if start_frame <= frame_number:
+            active_boxes.append(box)
+    
+    return active_boxes
 
 
 
@@ -166,7 +172,7 @@ def read_frame(video, frame_number):
     return frame if _success else None
 
 
-def save_labeled_video(video, frame_box_map):
+def save_labeled_video(video, regions):
     width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = video.get(cv2.CAP_PROP_FPS) or 30
@@ -183,7 +189,7 @@ def save_labeled_video(video, frame_box_map):
     success, frame = video.read()
 
     while success:
-        for box in frame_box_map.get(frame_number, []):
+        for box in get_active_boxes(regions, frame_number):
             draw_box(frame, *box)
 
         writer.write(frame)
@@ -193,7 +199,7 @@ def save_labeled_video(video, frame_box_map):
 
     writer.release()
 
-    print(f"Saved {OUTPUT_PATH} ({len(frame_box_map)} frames labeled)")
+    print(f"Saved {OUTPUT_PATH} ({len(regions)} frames labeled)")
 
 
 def main():
@@ -211,7 +217,10 @@ def main():
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
     click_points = []
-    frame_box_map = {}
+    # regions guarda {id_unico: (frame_donde_se_marco, (p1,p2))}
+    # Usar ID Único evita que los frames se sobreescriban 
+    regions = {}
+    next_id = [0] 
 
     cv2.namedWindow(WINDOW_NAME)
     cv2.setMouseCallback(
@@ -226,7 +235,7 @@ def main():
             cv2.circle(preview, point, 4, RED, -1)
 
         # draw current box assign to the frame
-        for box in frame_box_map.get(frame_number, []):
+        for box in get_active_boxes(regions, frame_number):
             draw_box(preview, *box)
 
         draw_frame_number(preview, frame_number, total_frames, paused)
@@ -263,11 +272,16 @@ def main():
 
         if len(click_points) >= 2:
             box = (click_points[0], click_points[1])
-            frame_box_map.setdefault(frame_number, []).append(box)
+            # Guarda la región con un ID Único y el frame actual como inicio 
+            regions[next_id[0]] = (frame_number, box)
+            next_id[0] += 1
             click_points.clear()
 
-        if key in UNDO_KEYS and frame_box_map.get(frame_number):
-            frame_box_map[frame_number].pop()
+        if key in UNDO_KEYS:
+            # Busca todas las regiones marcadas en el frame actual y eliminar la última  (la del ID más alto )
+            to_delete = [rid for rid, (fn, _) in regions.items() if fn == frame_number]
+            if to_delete:
+                del regions[max(to_delete)]
 
         if key in QUIT_KEYS or key in DISCARD_KEYS:
             break
@@ -275,8 +289,8 @@ def main():
     cv2.destroyAllWindows()
 
     if key in QUIT_KEYS:
-        save_labeled_video(video, frame_box_map)
-        save_regions_videos(frame_box_map)
+        save_labeled_video(video, regions)
+        save_regions_videos(regions)
     else:
         print("Exited without saving")
 
