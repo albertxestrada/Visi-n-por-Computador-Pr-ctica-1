@@ -102,15 +102,25 @@ El vídeo se abre en pausa sobre el primer frame. `Q` guarda y sale; `Esc` sale 
 
 ### 1.2 Extracción de regiones (`2-region-extraction.py`)
 
-Genera un vídeo independiente por cada región seleccionada. Cada vídeo contiene únicamente
-el recorte del vídeo original correspondiente al rectángulo marcado por el
-usuario, con fondo negro en los frames donde esa región no fue etiquetada.
+Genera un video independiente por cada región seleccionada. Cada video contiene únicamente el recorte del video original correspondiente al rectángulo marcado, propagado desde el frame donde se marcó hasta el final del video. 
+Los videos se guardan como `outputs/2-region-1.mp4`, `outputs/2-region-2.mp4`, etc. uno por región marcada.
 
-Los vídeos de región se guardan como `outputs/2-region-1.mp4`,
-`outputs/2-region-2.mp4`, etc., uno por cada región marcada.
+**Propagación automática desde el frame marcado**
 
-- Genera un vídeo por región con el recorte de su rectángulo.
-- Si la caja cambia de tamaño, el vídeo usa el tamaño máximo y rellena con negro.
+La región no desaparece al pasar al siguiente frame: se propaga automáticamente al final del video. Lo que permite crear un objeto desde el momento en que aparece sin tener que volver a dibujar en cada frame. 
+
+**Un ID único por region**
+
+Las regiones se almacenan como `{id_unico: (frame_inicio, (p1,p2))}` en lugar de `{id_unico: (frame, [lista])}`. Con el objetivo de evitar colisiones cuando se marcan varias regiones en distintos frames, ya que cada uno tiene su propio identificador.
+
+**Un VideoWriter por región**
+
+Cada region tiene su propio VideoWriter, lo que permite generar todos los recortes de una sola pasada sobre el video original.
+
+**Normalización de coordenadas**
+
+Al recortar se normalizan las esquinas con `min/max`, para que funcione aunque el usuario haya dibujado el rectángulo de derecha a izquierda o de arriba hacia abajo. 
+
 
 ![Demo de 2-region-extraction](./documentation/2-region-extraction.gif)
 
