@@ -112,7 +112,7 @@ Los vídeos de región se guardan como `outputs/2-region-1.mp4`,
 - Genera un vídeo por región con el recorte de su rectángulo.
 - Si la caja cambia de tamaño, el vídeo usa el tamaño máximo y rellena con negro.
 
-![Demo de 2-region-extraction](https://github.com/user-attachments/assets/cf3bec6c-1e66-426b-9eef-644f2925dfdf)
+![Demo de 2-region-extraction](./documentation/2-region-extraction.gif)
 
 ### 1.3 Ocultación de regiones (`3-hiding-regions.py`)
 
