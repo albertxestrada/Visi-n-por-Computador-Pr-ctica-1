@@ -124,13 +124,25 @@ Al recortar se normalizan las esquinas con `min/max`, para que funcione aunque e
 
 ![Demo de 2-region-extraction](./documentation/2-region-extraction.gif)
 
+
 ### 1.3 Ocultación de regiones (`3-hiding-regions.py`)
 
-Genera un vídeo en el que las regiones marcadas se ocultan mediante un color sólido negro por defecto.
+Genera un vídeo completo en el que las regiones marcadas quedan ocultas con un
+color sólido.
 
-- Genera un vídeo completo con las regiones rellenas de un color sólido (negro por defecto, configurable).
-- El resultado no depende del orden de los clicks y nunca se sale de la imagen.
-- Las regiones siguen ocultas en los frames siguientes (ver 1.4).
+**Proceso de solución**
+1. Se ordenan las esquinas de cada región (`sorted`), así el resultado no
+   depende del orden de los clics.
+2. Se recortan los límites a `[0, width - 1]` y `[0, height - 1]`, para que no se
+   salga de la imagen.
+3. Se rellena fila por fila: `frame[y, x1:x2 + 1] = color`.
+
+**Funciones realizadas**
+- `hide_box`: aplica los pasos anteriores y rellena la región con el color
+  sólido.
+- `save_hidden_video`: recorre el vídeo, toma de `frame_box_map` las regiones
+  marcadas en cada frame, se las pasa a `hide_box` para tapar la imagen y
+  guarda el resultado.
 
 ![Demo de 3-hiding-regions](./documentation/3-hiding-regions.gif)
 
